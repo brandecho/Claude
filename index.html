@@ -1,0 +1,556 @@
+<style>
+  /* ============ TOKENS ============ */
+  :root {
+    --ink: #0E0B14;
+    --ink-2: #17131F;
+    --ink-3: #201A2C;
+    --line: #2C2438;
+    --line-soft: #241E31;
+    --text: #F3EEF7;
+    --text-dim: #B7AEC6;
+    --text-mut: #7E7590;
+    --champagne: #E7C87A;
+    --champagne-deep: #C79A45;
+    --orchid: #C08CFF;
+    --orchid-deep: #8E5BE0;
+    --good: #67D9A6;
+    --warn: #E9B25C;
+    --shadow: 0 30px 80px -30px rgba(0,0,0,.85);
+    --card: linear-gradient(155deg, #1C1626 0%, #14101C 100%);
+
+    --serif: "Didot", "Bodoni MT", "Playfair Display", "Hoefler Text", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, monospace;
+
+    --page-bg: radial-gradient(1200px 700px at 50% -10%, #241a33 0%, #100b18 45%, #08060d 100%);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ink: #FBF7F1;
+      --ink-2: #FFFFFF;
+      --ink-3: #F4EEE3;
+      --line: #E7DECD;
+      --line-soft: #EFE8DA;
+      --text: #211A2B;
+      --text-dim: #5D5468;
+      --text-mut: #928A9C;
+      --champagne: #A9812E;
+      --champagne-deep: #8A6820;
+      --orchid: #7A46C9;
+      --orchid-deep: #5E2FA8;
+      --shadow: 0 30px 70px -34px rgba(60,40,20,.45);
+      --card: linear-gradient(155deg, #FFFFFF 0%, #FAF4EA 100%);
+      --page-bg: radial-gradient(1200px 700px at 50% -10%, #efe6d6 0%, #f6efe3 45%, #efe7d8 100%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink:#0E0B14; --ink-2:#17131F; --ink-3:#201A2C; --line:#2C2438; --line-soft:#241E31;
+    --text:#F3EEF7; --text-dim:#B7AEC6; --text-mut:#7E7590;
+    --champagne:#E7C87A; --champagne-deep:#C79A45; --orchid:#C08CFF; --orchid-deep:#8E5BE0;
+    --good:#67D9A6; --warn:#E9B25C; --shadow:0 30px 80px -30px rgba(0,0,0,.85);
+    --card:linear-gradient(155deg,#1C1626 0%,#14101C 100%);
+    --page-bg:radial-gradient(1200px 700px at 50% -10%, #241a33 0%, #100b18 45%, #08060d 100%);
+  }
+  :root[data-theme="light"] {
+    --ink:#FBF7F1; --ink-2:#FFFFFF; --ink-3:#F4EEE3; --line:#E7DECD; --line-soft:#EFE8DA;
+    --text:#211A2B; --text-dim:#5D5468; --text-mut:#928A9C;
+    --champagne:#A9812E; --champagne-deep:#8A6820; --orchid:#7A46C9; --orchid-deep:#5E2FA8;
+    --good:#2F9E70; --warn:#B9812E; --shadow:0 30px 70px -34px rgba(60,40,20,.45);
+    --card:linear-gradient(155deg,#FFFFFF 0%,#FAF4EA 100%);
+    --page-bg:radial-gradient(1200px 700px at 50% -10%, #efe6d6 0%, #f6efe3 45%, #efe7d8 100%);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--page-bg);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  @media (min-width: 900px) {
+    .wrap { grid-template-columns: 1fr 390px; gap: 56px; align-items: center; }
+  }
+
+  /* ============ PITCH SIDE ============ */
+  .pitch { align-self: center; }
+  .eyebrow {
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .32em;
+    font-size: 11px;
+    color: var(--champagne);
+    margin: 0 0 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::after { content:""; height:1px; flex:1; background:linear-gradient(90deg,var(--line),transparent); }
+  .wordmark {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(40px, 6vw, 68px);
+    line-height: .98;
+    letter-spacing: -.01em;
+    margin: 0 0 20px;
+    text-wrap: balance;
+  }
+  .wordmark em { font-style: italic; color: var(--champagne); }
+  .lede {
+    color: var(--text-dim);
+    font-size: 17px;
+    max-width: 42ch;
+    margin: 0 0 32px;
+  }
+  .feat { list-style: none; padding: 0; margin: 0 0 34px; display: grid; gap: 16px; max-width: 44ch; }
+  .feat li { display: flex; gap: 14px; align-items: flex-start; font-size: 14.5px; color: var(--text-dim); }
+  .feat .mk {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center; margin-top: 1px;
+    border: 1px solid var(--champagne-deep); color: var(--champagne);
+    font-family: var(--serif); font-size: 13px; font-style: italic;
+    background: rgba(199,154,69,.08);
+  }
+  .feat li b { color: var(--text); font-weight: 600; }
+  .note { font-family: var(--mono); font-size: 11.5px; color: var(--text-mut); letter-spacing: .02em; }
+  .note span { color: var(--orchid); }
+
+  /* ============ PHONE ============ */
+  .stage { display: grid; justify-items: center; gap: 18px; }
+  .phone {
+    width: 100%; max-width: 372px;
+    background: #000;
+    border-radius: 46px;
+    padding: 12px;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,.05) inset;
+    position: relative;
+  }
+  .screen {
+    background: var(--ink);
+    border-radius: 35px;
+    overflow: hidden;
+    height: 748px;
+    display: flex; flex-direction: column;
+    position: relative;
+    border: 1px solid var(--line-soft);
+  }
+  .notch { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:118px; height:26px; background:#000; border-radius:0 0 16px 16px; z-index:40; }
+
+  .statusbar {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 14px 24px 6px; font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  }
+  .statusbar .dots { letter-spacing:2px; }
+
+  /* app header */
+  .app-head { padding: 6px 20px 12px; }
+  .brand-row { display:flex; align-items:center; justify-content:space-between; }
+  .brand {
+    font-family: var(--serif); font-size: 20px; letter-spacing:.02em;
+  }
+  .brand em { font-style: italic; color: var(--champagne); }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg,var(--champagne),var(--champagne-deep));
+    color:#1a1206; display:grid; place-items:center; font-weight:700; font-size:13px;
+    box-shadow: 0 0 0 2px var(--ink), 0 0 0 3px var(--champagne-deep);
+  }
+
+  /* mode toggle */
+  .toggle {
+    margin: 4px 20px 0; padding: 4px; display:flex; gap:4px;
+    background: var(--ink-3); border:1px solid var(--line-soft); border-radius: 13px;
+  }
+  .toggle button {
+    flex:1; border:0; background:transparent; color:var(--text-mut); cursor:pointer;
+    padding: 9px 8px; border-radius: 10px; font-family:var(--mono); font-size:11px;
+    text-transform:uppercase; letter-spacing:.12em; transition:.22s;
+  }
+  .toggle button[aria-selected="true"] { background: var(--ink-2); color: var(--text); box-shadow: 0 4px 14px -8px #000; }
+
+  .scroll { flex:1; overflow-y:auto; padding: 16px 20px 28px; scrollbar-width:none; }
+  .scroll::-webkit-scrollbar { display:none; }
+  .panel { display:none; animation: fade .4s ease both; }
+  .panel.on { display:block; }
+  @keyframes fade { from { opacity:0; transform:translateY(8px);} to {opacity:1; transform:none;} }
+  @media (prefers-reduced-motion: reduce){ .panel, .reveal { animation:none !important; } }
+
+  .sec-label {
+    font-family: var(--mono); font-size: 10.5px; text-transform:uppercase; letter-spacing:.2em;
+    color: var(--text-mut); margin: 22px 2px 11px;
+  }
+
+  /* membership card */
+  .memcard {
+    position: relative; border-radius: 20px; padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .memcard::before {
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(120px 120px at 88% 8%, rgba(231,200,122,.22), transparent 70%),
+      radial-gradient(160px 160px at 12% 110%, rgba(192,140,255,.14), transparent 70%);
+    pointer-events:none;
+  }
+  .memcard .tier-top { display:flex; justify-content:space-between; align-items:flex-start; position:relative; }
+  .tier-name { font-family:var(--serif); font-size:27px; line-height:1; }
+  .tier-name small { display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.28em; text-transform:uppercase; color:var(--champagne); margin-bottom:7px; }
+  .chip {
+    width: 38px; height: 28px; border-radius:6px; position:relative;
+    background: linear-gradient(135deg,#f0d488,#b7893a);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.2);
+  }
+  .chip::after{ content:""; position:absolute; inset:6px 10px; border:1px solid rgba(0,0,0,.22); border-radius:2px;}
+  .memno { font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; color:var(--text-dim); margin:22px 0 4px; position:relative; }
+  .memname { font-family:var(--serif); font-size:19px; position:relative; }
+  .memsince { font-family:var(--mono); font-size:10px; color:var(--text-mut); letter-spacing:.1em; position:relative; text-transform:uppercase; }
+
+  /* tier progress */
+  .prog-wrap { position:relative; margin-top:16px; }
+  .prog-line { display:flex; justify-content:space-between; font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-mut); margin-bottom:7px;}
+  .prog-line b { color: var(--champagne); }
+  .bar { height:6px; border-radius:99px; background: var(--ink-3); overflow:hidden; box-shadow: inset 0 0 0 1px var(--line-soft); }
+  .bar i { display:block; height:100%; width:78%; border-radius:99px; background:linear-gradient(90deg,var(--champagne-deep),var(--champagne)); }
+  .prog-hint { font-family:var(--mono); font-size:10px; color:var(--text-mut); margin-top:8px; }
+  .prog-hint span{ color: var(--text-dim); }
+
+  /* stats */
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .stat { background:var(--ink-2); border:1px solid var(--line-soft); border-radius:14px; padding:14px; }
+  .stat .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--text-mut); }
+  .stat .v { font-family:var(--serif); font-size:25px; margin-top:6px; font-variant-numeric:tabular-nums; }
+  .stat .v small { font-size:14px; color:var(--text-mut); }
+  .stat.gold .v { color: var(--champagne); }
+
+  /* list rows */
+  .row {
+    display:flex; align-items:center; gap:12px; padding:12px;
+    background:var(--ink-2); border:1px solid var(--line-soft); border-radius:14px; margin-bottom:8px;
+  }
+  .row .thumb {
+    width:40px; height:40px; border-radius:11px; flex:none; display:grid; place-items:center;
+    font-family:var(--serif); font-size:16px; color:var(--ink); font-style:italic;
+    background:linear-gradient(135deg,var(--champagne),var(--champagne-deep));
+  }
+  .row.person .thumb { border-radius:50%; background:linear-gradient(135deg,var(--orchid),var(--orchid-deep)); color:#fff; }
+  .row .meta { flex:1; min-width:0; }
+  .row .meta .t { font-size:14px; font-weight:600; }
+  .row .meta .s { font-size:11.5px; color:var(--text-mut); font-family:var(--mono); letter-spacing:.02em; }
+  .row .tag {
+    font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--champagne); border:1px solid var(--champagne-deep); padding:4px 7px; border-radius:99px; white-space:nowrap;
+  }
+  .row .heart { color: var(--orchid); font-size:15px; }
+
+  /* request-access venues */
+  .venue {
+    display:flex; align-items:center; gap:12px; padding:12px;
+    background:var(--ink-2); border:1px solid var(--line-soft); border-radius:14px; margin-bottom:8px;
+  }
+  .venue .thumb { width:44px; height:44px; border-radius:12px; flex:none; background:var(--ink-3);
+    background-size:cover; display:grid; place-items:center; font-family:var(--serif); font-size:18px; color:var(--champagne); border:1px solid var(--line); }
+  .venue .meta { flex:1; }
+  .venue .meta .t { font-size:13.5px; font-weight:600; }
+  .venue .meta .s { font-size:11px; color:var(--text-mut); font-family:var(--mono); }
+  .req {
+    border:1px solid var(--champagne-deep); background:transparent; color:var(--champagne);
+    font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+    padding:8px 11px; border-radius:99px; cursor:pointer; transition:.2s; white-space:nowrap;
+  }
+  .req:hover { background:var(--champagne); color:var(--ink); }
+  .req[data-sent="1"]{ border-color:var(--good); color:var(--good); }
+  .req[data-sent="1"]:hover{ background:transparent; }
+
+  /* ===== VENUE HOST PANEL ===== */
+  .host-intro { font-size:12.5px; color:var(--text-dim); margin:6px 2px 4px; font-family:var(--mono); letter-spacing:.02em; }
+
+  .push {
+    position:relative; border-radius:18px; padding:16px; cursor:pointer;
+    background: linear-gradient(155deg, rgba(192,140,255,.16), rgba(142,91,224,.06));
+    border:1px solid rgba(192,140,255,.4);
+    box-shadow: 0 0 40px -18px var(--orchid);
+    transition:.2s;
+  }
+  .push:hover { transform: translateY(-2px); }
+  .push .p-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .live-dot { width:9px; height:9px; border-radius:50%; background:var(--orchid); position:relative; }
+  .live-dot::after { content:""; position:absolute; inset:-6px; border-radius:50%; border:2px solid var(--orchid); animation:pulse 1.8s ease-out infinite; }
+  @keyframes pulse { 0%{transform:scale(.5);opacity:.9;} 100%{transform:scale(1.5);opacity:0;} }
+  @media (prefers-reduced-motion: reduce){ .live-dot::after{ animation:none; opacity:.4;} }
+  .push .p-app { font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--orchid); flex:1; }
+  .push .p-time { font-family:var(--mono); font-size:10px; color:var(--text-mut); }
+  .push .p-title { font-size:15px; font-weight:600; margin-bottom:3px; }
+  .push .p-title b { color: var(--champagne); }
+  .push .p-body { font-size:12.5px; color:var(--text-dim); }
+  .push .p-cta { margin-top:12px; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--orchid); display:flex; align-items:center; gap:6px; }
+  .push .p-cta::after{ content:"→"; transition:.2s; }
+  .push:hover .p-cta::after{ transform:translateX(4px); }
+
+  .profile { display:none; margin-top:14px; }
+  .profile.on { display:block; animation: fade .45s ease both; }
+
+  .pcard { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:18px; }
+  .p-top { display:flex; gap:14px; align-items:center; }
+  .p-av {
+    width:56px; height:56px; border-radius:50%; flex:none; display:grid; place-items:center;
+    font-family:var(--serif); font-size:22px; color:#1a1206; font-style:italic;
+    background:linear-gradient(135deg,var(--champagne),var(--champagne-deep));
+    box-shadow:0 0 0 2px var(--ink),0 0 0 3px var(--champagne-deep);
+  }
+  .p-id .nm { font-family:var(--serif); font-size:21px; line-height:1.1; }
+  .p-badge { display:inline-flex; align-items:center; gap:6px; margin-top:5px;
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--champagne);
+    border:1px solid var(--champagne-deep); padding:3px 9px; border-radius:99px; background:rgba(199,154,69,.08); }
+
+  .p-eta { display:flex; gap:10px; margin:16px 0; }
+  .p-eta .e { flex:1; background:var(--ink-2); border:1px solid var(--line-soft); border-radius:12px; padding:11px; text-align:center; }
+  .p-eta .e .k { font-family:var(--mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-mut); }
+  .p-eta .e .v { font-family:var(--serif); font-size:19px; margin-top:4px; font-variant-numeric:tabular-nums; }
+  .p-eta .e.hl .v { color:var(--orchid); }
+
+  .p-block { margin-top:14px; }
+  .p-block .h { font-family:var(--mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--text-mut); margin-bottom:9px; }
+  .tastes { display:flex; flex-wrap:wrap; gap:7px; }
+  .tastes span {
+    font-size:12px; padding:6px 11px; border-radius:99px; color:var(--text);
+    background:var(--ink-2); border:1px solid var(--line);
+  }
+  .tastes span b { color: var(--champagne); font-weight:600; }
+  .p-care { display:flex; align-items:center; gap:10px; background:var(--ink-2); border:1px solid var(--line-soft); border-radius:12px; padding:11px 12px; }
+  .p-care .d { width:34px;height:34px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--orchid),var(--orchid-deep));display:grid;place-items:center;color:#fff;font-family:var(--serif);font-style:italic;font-size:14px;}
+  .p-care .t{ font-size:13px; font-weight:600;} .p-care .s{ font-size:11px;color:var(--text-mut);font-family:var(--mono);}
+
+  .p-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:16px; }
+  .btn { border:0; cursor:pointer; padding:13px; border-radius:12px; font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; transition:.2s; }
+  .btn.primary { background:linear-gradient(135deg,var(--champagne),var(--champagne-deep)); color:#1a1206; font-weight:700; }
+  .btn.primary:hover{ filter:brightness(1.08); }
+  .btn.ghost { background:transparent; border:1px solid var(--line); color:var(--text-dim); }
+  .btn.ghost:hover{ border-color:var(--champagne-deep); color:var(--champagne); }
+
+  .toast {
+    position:absolute; left:20px; right:20px; bottom:20px; z-index:50;
+    background:var(--ink-3); border:1px solid var(--champagne-deep); border-radius:14px;
+    padding:13px 16px; display:flex; gap:10px; align-items:center;
+    transform:translateY(140%); transition:transform .4s cubic-bezier(.2,.9,.3,1);
+    box-shadow: var(--shadow);
+  }
+  .toast.show { transform:translateY(0); }
+  .toast .tk { color:var(--champagne); font-size:16px; }
+  .toast .tt { font-size:12.5px; color:var(--text); }
+
+  /* footer controls */
+  .footer-controls { display:flex; align-items:center; gap:14px; font-family:var(--mono); font-size:11px; color:var(--text-mut); }
+  .theme-btn { background:transparent; border:1px solid var(--line); color:var(--text-dim); border-radius:99px; padding:7px 14px; cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:.06em; }
+  .theme-btn:hover{ border-color:var(--champagne-deep); color:var(--champagne); }
+</style>
+
+<div class="wrap">
+  <!-- PITCH -->
+  <section class="pitch">
+    <p class="eyebrow">Members-only · after dark</p>
+    <h1 class="wordmark">My <em>VIP</em> Clubs</h1>
+    <p class="lede">The hookup, in your pocket. Skip the line, get recognized at the door, and be taken care of exactly the way you like — before you even walk in.</p>
+
+    <ul class="feat">
+      <li><span class="mk">i</span><span><b>Know your standing.</b> Your tier, lifetime spend, tips, and the venues &amp; people who take care of you — all in one card.</span></li>
+      <li><span class="mk">ii</span><span><b>Be recognized before the door.</b> GPS pings the venue host the moment you're near, so they greet you by name.</span></li>
+      <li><span class="mk">iii</span><span><b>Get the hookup.</b> Browse rooms you can't get into alone and request access — My VIP Clubs makes the call.</span></li>
+    </ul>
+
+    <p class="note">This is an interactive prototype — tap the <span>Venue Host</span> toggle, then the <span>nearby-VIP alert</span> to see the recognition flow. Sample data only.</p>
+    <div style="height:22px"></div>
+    <div class="footer-controls">
+      <button class="theme-btn" id="themeBtn">◐ Toggle theme</button>
+    </div>
+  </section>
+
+  <!-- PHONE -->
+  <section class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar"><span>1:14 AM</span><span class="dots">● ● ●  ⌵  ▮</span></div>
+
+        <div class="app-head">
+          <div class="brand-row">
+            <div class="brand">My <em>VIP</em> Clubs</div>
+            <div class="avatar">MV</div>
+          </div>
+        </div>
+
+        <div class="toggle" role="tablist" aria-label="View">
+          <button role="tab" aria-selected="true" data-tab="member">Member</button>
+          <button role="tab" aria-selected="false" data-tab="venue">Venue Host</button>
+        </div>
+
+        <div class="scroll">
+          <!-- ============ MEMBER PANEL ============ -->
+          <div class="panel on" id="member">
+
+            <div class="memcard">
+              <div class="tier-top">
+                <div class="tier-name"><small>Membership Tier</small>Obsidian</div>
+                <div class="chip"></div>
+              </div>
+              <div class="memno">4417 · 0092 · 8830</div>
+              <div class="memname">Marcus Vaughn</div>
+              <div class="memsince">Member since 2021</div>
+
+              <div class="prog-wrap">
+                <div class="prog-line"><span>Platinum</span><span><b>Obsidian</b></span></div>
+                <div class="bar"><i></i></div>
+                <div class="prog-hint"><span>$6,800</span> more in the next 12 months keeps your Obsidian standing.</div>
+              </div>
+            </div>
+
+            <div class="stats">
+              <div class="stat gold"><div class="k">Lifetime spend</div><div class="v">$48,200</div></div>
+              <div class="stat gold"><div class="k">Total tips</div><div class="v">$9,640</div></div>
+              <div class="stat"><div class="k">Nights out</div><div class="v">137</div></div>
+              <div class="stat"><div class="k">Doors skipped</div><div class="v">41</div></div>
+            </div>
+
+            <div class="sec-label">Favorite venues</div>
+            <div class="row"><div class="thumb">A</div><div class="meta"><div class="t">The Aviary — Rooftop</div><div class="s">18 visits · corner banquette</div></div><span class="heart">♥</span></div>
+            <div class="row"><div class="thumb">M</div><div class="meta"><div class="t">Marquee</div><div class="s">11 visits · main room</div></div><span class="heart">♥</span></div>
+            <div class="row"><div class="thumb">N</div><div class="meta"><div class="t">Noir Supper Club</div><div class="s">9 visits · booth 4</div></div><span class="heart">♥</span></div>
+
+            <div class="sec-label">People who take care of you</div>
+            <div class="row person"><div class="thumb">D</div><div class="meta"><div class="t">Dominic</div><div class="s">Head Bartender · The Aviary</div></div><span class="tag">Your usual</span></div>
+            <div class="row person"><div class="thumb">S</div><div class="meta"><div class="t">Sasha</div><div class="s">VIP Host · Marquee</div></div></div>
+            <div class="row person"><div class="thumb">R</div><div class="meta"><div class="t">Renata</div><div class="s">Server · Noir Supper Club</div></div></div>
+
+            <div class="sec-label">Get the hookup · request access</div>
+            <div class="venue"><div class="thumb">Ø</div><div class="meta"><div class="t">Halo Dayclub</div><div class="s">Invite-only · pool cabanas</div></div><button class="req" data-req>Request</button></div>
+            <div class="venue"><div class="thumb">V</div><div class="meta"><div class="t">The Vault</div><div class="s">Speakeasy · no public list</div></div><button class="req" data-req>Request</button></div>
+            <div class="venue"><div class="thumb">L</div><div class="meta"><div class="t">Lumen</div><div class="s">Members' lounge · penthouse</div></div><button class="req" data-req>Request</button></div>
+          </div>
+
+          <!-- ============ VENUE HOST PANEL ============ -->
+          <div class="panel" id="venue">
+            <p class="host-intro">// The Aviary — Host console</p>
+
+            <div class="push" id="pushCard" role="button" tabindex="0" aria-label="Open VIP profile">
+              <div class="p-head">
+                <span class="live-dot"></span>
+                <span class="p-app">VIP nearby</span>
+                <span class="p-time">now · 0.3 mi</span>
+              </div>
+              <div class="p-title"><b>Obsidian member</b> approaching</div>
+              <div class="p-body">Marcus Vaughn just entered your area. ETA ~6 min.</div>
+              <div class="p-cta">Tap to view profile</div>
+            </div>
+
+            <div class="profile" id="profile">
+              <div class="pcard">
+                <div class="p-top">
+                  <div class="p-av">MV</div>
+                  <div class="p-id">
+                    <div class="nm">Marcus Vaughn</div>
+                    <span class="p-badge">◆ Obsidian · top 2%</span>
+                  </div>
+                </div>
+
+                <div class="p-eta">
+                  <div class="e hl"><div class="k">ETA</div><div class="v">6 min</div></div>
+                  <div class="e"><div class="k">Visits here</div><div class="v">18</div></div>
+                  <div class="e"><div class="k">Avg. tab</div><div class="v">$1.9k</div></div>
+                </div>
+
+                <div class="p-block">
+                  <div class="h">How he likes it</div>
+                  <div class="tastes">
+                    <span><b>Drink ·</b> Casamigos Reposado, neat</span>
+                    <span><b>Table ·</b> corner banquette</span>
+                    <span><b>Music ·</b> deep house</span>
+                    <span><b>Never ·</b> bottle sparklers</span>
+                  </div>
+                </div>
+
+                <div class="p-block">
+                  <div class="h">His person here</div>
+                  <div class="p-care">
+                    <div class="d">D</div>
+                    <div><div class="t">Dominic — Head Bartender</div><div class="s">Notify · "Marcus, 6 min out"</div></div>
+                  </div>
+                </div>
+
+                <div class="p-actions">
+                  <button class="btn primary" id="greetBtn">Greet at door</button>
+                  <button class="btn ghost" id="tableBtn">Ready his table</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="toast" id="toast"><span class="tk">✓</span><span class="tt">Done</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+
+    // theme toggle
+    document.getElementById('themeBtn').addEventListener('click', function(){
+      var cur = root.getAttribute('data-theme');
+      if(!cur){ cur = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light'; }
+      root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+
+    // tab switching
+    var tabs = document.querySelectorAll('.toggle button');
+    tabs.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        tabs.forEach(function(b){ b.setAttribute('aria-selected','false'); });
+        btn.setAttribute('aria-selected','true');
+        document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+        document.getElementById(btn.dataset.tab).classList.add('on');
+      });
+    });
+
+    // toast helper
+    var toast = document.getElementById('toast');
+    var toastTimer;
+    function ping(msg){
+      toast.querySelector('.tt').textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2600);
+    }
+
+    // reveal profile
+    var profile = document.getElementById('profile');
+    function openProfile(){ profile.classList.add('on'); profile.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+    var pc = document.getElementById('pushCard');
+    pc.addEventListener('click', openProfile);
+    pc.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openProfile(); } });
+
+    document.getElementById('greetBtn').addEventListener('click', function(){ ping('Door greeting queued — “Welcome back, Marcus.”'); });
+    document.getElementById('tableBtn').addEventListener('click', function(){ ping('Corner banquette held · Dominic notified.'); });
+
+    // request access
+    document.querySelectorAll('[data-req]').forEach(function(b){
+      b.addEventListener('click', function(){
+        if(b.dataset.sent==='1') return;
+        b.dataset.sent='1'; b.textContent='Requested';
+        ping('Request sent — My VIP Clubs is making the call.');
+      });
+    });
+  })();
+</script>

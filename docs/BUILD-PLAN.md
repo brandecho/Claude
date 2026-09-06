@@ -46,11 +46,11 @@ location, cross-platform push) well-supported.
 - **Web (application + marketing + venue onboarding + demo):** the current
   `index.html` grows into a small static/Next.js site. **A live application flow
   already exists** at `myvipclubs.brandecho.chatgpt.site/apply` — a React/Vite SPA
-  with a 4-step wizard (Choose → Apply → Review & fee → Confirmation). Today the
-  **Standard** application posts to an external **JotForm**
-  (`form.jotform.com/262304451128045`); the **VIP Express** application is handled
-  in-app. The application API below has to connect to (or replace) these so
-  submissions land in our own database.
+  with a 4-step wizard (Choose → Apply → Review & fee → Confirmation). Both
+  applications are **JotForms**: Standard is the existing full form
+  (`form.jotform.com/262304451128045`); VIP Express is a **duplicated, shortened**
+  copy reached after the $25 Stripe payment. A JotForm webhook feeds both into the
+  application API below.
 
 > The current prototype is intentionally backend-free. Nothing below throws it
 > away — the same screens get wired to real data.
@@ -75,7 +75,7 @@ notification  id, to (staff/member), type, payload, sent_at, opened_at
 device        owner_id, owner_kind (member/staff), pushwoosh_hwid, push_token, platform
 application   id, applicant_email, type (standard/express), answers (jsonb),
               fee_status (na/unpaid/paid), stripe_payment_id,   -- fee only for express
-              source (jotform/in_app), external_ref (e.g. jotform submission id),
+              jotform_id, jotform_submission_id, stripe_session_id,   -- traceability
               status (submitted/under_review/approved/rejected),
               member_id (set once approved), created_at
 ```
@@ -97,33 +97,42 @@ Membership starts with an application. A live 4-step wizard already exists at
 `myvipclubs.brandecho.chatgpt.site/apply` (Choose → Apply → Review & fee →
 Confirmation). It needs a backend to receive, store, and act on submissions.
 
-**Two application types (as built on the site)**
-- **Standard Membership Application** — **free ($0)**, the *full* application:
-  complete membership profile, VIP preferences, and referral/qualification info
-  upfront. Less concierge follow-up afterward. *Today it posts to an external
-  JotForm (`form 262304451128045`).*
+**Two application types — both JotForms (decided)**
+- **Standard Membership Application** — **free ($0)**, the *full* application
+  (complete profile, VIP preferences, referral/qualification info upfront). The
+  existing JotForm (`form 262304451128045`).
 - **VIP Express Application** — **$25 non-refundable processing fee**, the *short*
-  path: ~60 seconds, essentials only, with concierge follow-up to complete the
-  rest. The fee covers the extra admin review/verification; it does **not**
-  guarantee approval. *Handled in-app (the SPA's step 3 "Review & fee").*
+  path (~60 seconds, essentials only, concierge follow-up after). Built by
+  **duplicating the Standard JotForm and trimming it to the essentials.** The fee
+  does **not** guarantee approval.
 
 > The naming is worth noting: the **short** form is the paid one, the **full**
 > form is free. You pay for speed and white-glove follow-up, not for the effort.
 
-**Getting submissions into our database (the integration reality)**
-- **Standard / JotForm:** either wire JotForm's **webhook** to `POST` each
-  submission into our API, or rebuild the Standard form as a native page that
-  posts directly. Webhook first (fast); rebuild later for a unified experience.
-- **VIP Express:** the in-app step needs a **Stripe** payment before the
-  application is marked submitted. Payment provider isn't visibly wired in the
-  current snapshot — confirm whether Stripe is already connected or still to do.
+**The flows (both end at a JotForm → our webhook)**
+- **Standard:** pick Standard → straight to the full JotForm → submit.
+- **VIP Express:** pick Express → **pay $25** → on success, redirect to the
+  **short JotForm** → submit.
+
+This keeps *all* form-building in JotForm — no custom form to maintain. The only
+custom piece is the payment gate in front of the Express JotForm.
+
+**Payment gate (simplest that works)**
+- Use a **Stripe Payment Link / Checkout** for the $25 fee whose **success URL is
+  the short JotForm**. Pass a reference (the Stripe session id) into the JotForm
+  as a **prefilled field** so the submission carries proof of payment.
+- The JotForm **webhook** then posts the submission (including that reference) to
+  our API, which verifies the payment with Stripe before marking the Express
+  application `paid` + `submitted`. This stops anyone reaching the short form URL
+  without paying.
 
 **Endpoints (Supabase Edge Functions / REST)**
 ```
-POST /applications              create an application (type: standard|express) + answers
-POST /applications/:id/pay      create Stripe payment intent for the $25 Express fee
-POST /webhooks/stripe           mark fee_status = paid on successful charge
-POST /webhooks/jotform          ingest a Standard submission → application row
+POST /pay/express               create Stripe Checkout for the $25 fee
+                                (success_url = short JotForm, prefilled w/ session id)
+POST /webhooks/stripe           record a paid Express session
+POST /webhooks/jotform          ingest a submission (standard or express) → application row;
+                                for express, verify the Stripe session before accepting
 GET  /applications/:id          status (submitted / under_review / approved / rejected)
 POST /applications/:id/approve  (admin) promote application → member profile
 GET  /me                        the app pulls the logged-in member's profile + tier
@@ -201,10 +210,10 @@ early venues and validate the flow.
 **Phase 1 — Foundations + application intake**
 Backend + auth + data model, in **one app with a member/host role toggle**
 (decided). Scope:
-- **Application API** (Supabase): ingests both the Standard submission (JotForm
-  webhook) and the VIP Express submission (in-app, **$25 fee via Stripe**), stores
-  each as an `application` row, and on approval promotes it into a `member`
-  profile.
+- **Application API** (Supabase): a **JotForm webhook** ingests both the Standard
+  and (payment-gated) VIP Express submissions, plus a **Stripe Checkout** for the
+  $25 Express fee whose success URL is the short JotForm. Stores each as an
+  `application` row; on approval promotes it into a `member` profile.
 - Member app reads *real* data: profile, tier card, spend/tips, favorites.
 - **Spend is logged by venue staff after the member leaves** (decided) — so a
   minimal staff "log a visit" screen (member + amount + tip) ships here too,
@@ -242,11 +251,11 @@ venues (VIP traffic, value), multi-city.
    integration at launch. Implication: staff need a lightweight "log a visit"
    screen (member + amount + tip) in Phase 1, and the tier engine recomputes
    from those entries. POS auto-capture stays a Phase 5 upgrade.
-3. **Two application types (live on the site).** **Standard** = full profile,
-   **free**, currently via JotForm (`form 262304451128045`). **VIP Express** =
-   short/60-second, **$25 non-refundable** fee via Stripe, handled in-app. An
-   application API receives and stores both, and approval promotes them into a
-   member profile.
+3. **Two application types, both JotForms.** **Standard** = full profile, **free**
+   (`form 262304451128045`). **VIP Express** = a **duplicated, shortened** copy of
+   that JotForm, reached only after paying the **$25 fee via Stripe** (Checkout
+   success URL → the short form). A JotForm webhook feeds both into our API;
+   approval promotes them into a member profile.
 4. **Pushwoosh** for push notifications *and* geofencing (Geo Zones). Replaces the
    earlier build-it-ourselves approach for background location.
 

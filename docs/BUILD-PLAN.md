@@ -33,15 +33,20 @@ location, cross-platform push) well-supported.
 
 - **Mobile (both apps):** React Native via **Expo**. One codebase, iOS + Android.
   Two apps (or one app with role switching early on).
-  - Background geofencing: `expo-location` + `expo-task-manager`
-  - Push: `expo-notifications` (FCM + APNs under the hood)
+- **Push notifications + geofencing:** **Pushwoosh** (decided). Its **Geo Zones**
+  feature does the geofence detection on-device and its push delivery handles
+  both member and host devices, so we don't hand-roll background location.
+  Pushwoosh SDK drops into the Expo/React Native app.
 - **Backend + data:** **Supabase** (managed Postgres, Auth, Row-Level Security,
-  Realtime, Edge Functions). Moves us fast without hand-rolling auth/infra.
+  Realtime, Edge Functions). Moves us fast without hand-rolling auth/infra. Hosts
+  the **application API** below.
   - Alternative if we outgrow it: Node + TypeScript API on Postgres.
-- **Web (marketing + venue onboarding + investor demo):** the current
-  `index.html` grows into a small static/Next.js site.
-- **Payments / spend capture (later):** POS integrations (Square, Toast) and/or
-  Stripe for membership billing.
+- **Payments:** **Stripe** for the **$25 application fee** at launch (and, later,
+  membership billing).
+- **Web (application + marketing + venue onboarding + demo):** the current
+  `index.html` grows into a small static/Next.js site. **An application flow is
+  already in progress (started on the ChatGPT site)** — it feeds the application
+  API rather than being rebuilt from scratch.
 
 > The current prototype is intentionally backend-free. Nothing below throws it
 > away — the same screens get wired to real data.
@@ -63,8 +68,17 @@ taste         member_id, kind (drink/table/music/avoid), value
 access_request id, member_id, venue_id, status, note, created_at
 geofence_event id, member_id, venue_id, kind (enter/dwell), at
 notification  id, to (staff/member), type, payload, sent_at, opened_at
-host_device   staff_id, push_token, platform
+device        owner_id, owner_kind (member/staff), pushwoosh_hwid, push_token, platform
+application   id, applicant_email, type (short/long), answers (jsonb),
+              fee_status (unpaid/paid/refunded), stripe_payment_id,
+              status (submitted/under_review/approved/rejected),
+              member_id (set once approved), created_at
 ```
+
+**Application → profile:** an application comes in via the API (short or long
+form, after the $25 Stripe fee), lands as an `application` row, and on approval
+is promoted into a real `member` profile (its answers seed the member's name,
+city, tastes, etc.). Device push tokens are stored per Pushwoosh `hwid`.
 
 **Tier engine:** tier = f(rolling 12-month spend + tips). Recompute on each new
 transaction. Tiers (draft): Silver → Gold → Platinum → Obsidian, with thresholds
@@ -72,21 +86,61 @@ we tune. Progress bar in the app reads from this.
 
 ---
 
-## 4. The recognition engine (the hard, important part)
+## 4. Application flow & API
+
+Membership starts with a paid application. This is live-in-progress (started on
+the ChatGPT-site web flow) and needs a backend to receive and store it.
+
+**Two application types**
+- **Short form** — the fast path (essentials only).
+- **Long form** — the full profile (more taste/preference detail up front).
+- Both charge a **$25 application fee** (Stripe) before submission completes.
+
+**Endpoints (Supabase Edge Functions / REST)**
+```
+POST /applications          create an application (type: short|long) + answers
+POST /applications/:id/pay  create Stripe payment intent for the $25 fee
+POST /webhooks/stripe       mark fee_status = paid on successful charge
+GET  /applications/:id      status (submitted / under_review / approved / rejected)
+POST /applications/:id/approve   (admin) promote application → member profile
+GET  /me                    the app pulls the logged-in member's profile + tier
+POST /visits                staff log a visit (member, amount, tip) → transaction
+POST /webhooks/pushwoosh    geo-zone entry events (see §5)
+```
+
+**Rules of the road**
+- Payment first: an application isn't "submitted" until `fee_status = paid`.
+- Never store raw card data — Stripe holds it; we keep only the payment id
+  (keeps us out of PCI scope).
+- Approval is the gate that turns an `application` into a `member` and seeds the
+  profile from the answers.
+
+---
+
+## 5. The recognition engine (the hard, important part)
 
 This is what makes the app magic — and the part that most needs care.
 
+Built on **Pushwoosh Geo Zones** (geofence detection) + **Pushwoosh push**
+(delivery). We add the relationship/consent logic between the two.
+
 **Flow**
 1. Member opts in to location sharing (granular: off / only near favorites / all).
-2. Member app registers **geofences** around eligible venues (favorites +
-   approved venues within their city).
-3. On **geofence entry**, the app sends an event to the backend
-   (member id + venue id + timestamp — *not* a continuous location stream).
+2. Each partner venue is a **Pushwoosh Geo Zone**; the member app is subscribed
+   to the zones for eligible venues (favorites + approved venues in their city).
+3. Pushwoosh detects **zone entry** on the member's device and calls our backend
+   webhook (member id + venue id + timestamp — *not* a continuous location stream).
 4. Backend checks: does this member have a relationship with this venue? Is the
    venue a live partner? Is a host on duty?
-5. If yes, push to on-duty host devices with a deep link to the member profile.
-6. Host taps → profile opens → greeting / table actions fire notifications to
-   the member and the relevant staffer.
+5. If yes, backend sends a **Pushwoosh push to on-duty host devices** with a deep
+   link to the member profile.
+6. Host taps → profile opens → greeting / table actions fire notifications
+   (also via Pushwoosh) to the member and the relevant staffer.
+
+> Note: Pushwoosh's built-in geo push would notify the *member* who entered the
+> zone. Our twist is that entry must alert the *host* — so we route the entry
+> event through our backend and fan out to host devices, rather than using a
+> plain member-facing geo push.
 
 **Design principles**
 - **Entry events, not tracking.** We react to arriving at a known venue; we do
@@ -98,7 +152,7 @@ This is what makes the app magic — and the part that most needs care.
 
 ---
 
-## 5. Privacy & trust (non-negotiable, built in from day one)
+## 6. Privacy & trust (non-negotiable, built in from day one)
 
 Location + identity is sensitive. This has to feel like a concierge, not
 surveillance — for members *and* for the venues' liability.
@@ -114,20 +168,25 @@ surveillance — for members *and* for the venues' liability.
 
 ---
 
-## 6. Phases & milestones
+## 7. Phases & milestones
 
 **Phase 0 — Prototype** ✅ *(done)*
 Interactive front-end of both views, sample data. Use it to sell the concept to
 early venues and validate the flow.
 
-**Phase 1 — Foundations**
+**Phase 1 — Foundations + application intake**
 Backend + auth + data model, in **one app with a member/host role toggle**
-(decided). Member app reads *real* data: profile, tier card, spend/tips,
-favorites. **Spend is logged by venue staff after the member leaves** (decided) —
-so a minimal staff "log a visit" screen (member + amount + tip) ships in Phase 1
-alongside the member view, since spend can't appear until staff can enter it.
-*Milestone: a real member logs in and sees standing that a venue actually
-entered.*
+(decided). Scope:
+- **Application API** (Supabase): receives short/long application submissions
+  from the web application flow, takes the **$25 fee via Stripe**, stores each as
+  an `application` row, and on approval promotes it into a `member` profile.
+- Member app reads *real* data: profile, tier card, spend/tips, favorites.
+- **Spend is logged by venue staff after the member leaves** (decided) — so a
+  minimal staff "log a visit" screen (member + amount + tip) ships here too,
+  since spend can't appear until staff can enter it.
+
+*Milestone: someone applies + pays on the web, gets approved into a member
+profile, logs in, and sees standing that a venue actually entered.*
 
 **Phase 2 — Venue & staff side**
 Full venue onboarding, staff accounts & roles, the richer host console, linking
@@ -148,7 +207,7 @@ venues (VIP traffic, value), multi-city.
 
 ---
 
-## 7. Decisions & open questions
+## 8. Decisions & open questions
 
 **Decided**
 1. **One app, member/host role toggle.** A single app switches between the
@@ -158,14 +217,20 @@ venues (VIP traffic, value), multi-city.
    integration at launch. Implication: staff need a lightweight "log a visit"
    screen (member + amount + tip) in Phase 1, and the tier engine recomputes
    from those entries. POS auto-capture stays a Phase 5 upgrade.
+3. **Paid application to join.** Two forms — **short** and **long** — each with a
+   **$25 fee via Stripe**. An application API receives and stores submissions,
+   and approval promotes them into a member profile. (Web application flow already
+   started on the ChatGPT site — the API connects to it.)
+4. **Pushwoosh** for push notifications *and* geofencing (Geo Zones). Replaces the
+   earlier build-it-ourselves approach for background location.
 
 **Still open (can settle as we go)**
-3. **Tier thresholds** — actual dollar figures for Silver → Obsidian.
-4. **Launch market** — one city / a handful of venues to start.
-5. **Revenue model** — membership fee, venue subscription, per-recognition, or
-   commission on brokered access? Shapes what we instrument.
+5. **Tier thresholds** — actual dollar figures for Silver → Obsidian.
+6. **Launch market** — one city / a handful of venues to start.
+7. **Revenue model beyond the $25 application fee** — recurring membership, venue
+   subscription, per-recognition, or commission on brokered access?
 
 ---
 
-*Phase 1 is unblocked. Remaining open items (3–5) don't block the first code
+*Phase 1 is unblocked. Remaining open items (5–7) don't block the first code
 step and can be decided while Phase 1 is built.*

@@ -121,13 +121,18 @@ Interactive front-end of both views, sample data. Use it to sell the concept to
 early venues and validate the flow.
 
 **Phase 1 — Foundations**
-Backend + auth + data model. Member app reads *real* data: profile, tier card,
-spend/tips, favorites. Spend entered manually (by us) at first.
-*Milestone: a real member logs in and sees their true standing.*
+Backend + auth + data model, in **one app with a member/host role toggle**
+(decided). Member app reads *real* data: profile, tier card, spend/tips,
+favorites. **Spend is logged by venue staff after the member leaves** (decided) —
+so a minimal staff "log a visit" screen (member + amount + tip) ships in Phase 1
+alongside the member view, since spend can't appear until staff can enter it.
+*Milestone: a real member logs in and sees standing that a venue actually
+entered.*
 
 **Phase 2 — Venue & staff side**
-Venue onboarding, staff accounts, host console app, linking members↔venues,
-access-request workflow. *Milestone: a host can pull up a member profile.*
+Full venue onboarding, staff accounts & roles, the richer host console, linking
+members↔venues, access-request workflow. Builds out the staff side beyond the
+Phase 1 spend-logging screen. *Milestone: a host can pull up a member profile.*
 
 **Phase 3 — The recognition engine**
 Geofencing + push + consent controls. *Milestone: walk near a partner venue →
@@ -143,12 +148,18 @@ venues (VIP traffic, value), multi-city.
 
 ---
 
-## 7. Open questions to decide before Phase 1
+## 7. Decisions & open questions
 
-1. **One app with a role toggle, or two separate apps** (member vs. venue)?
-   Recommendation: one app, role-based, until the host side needs its own thing.
-2. **How is spend captured at launch** — manual entry by My VIP Clubs, venue
-   self-report, or POS integration? (Affects Phase 1 scope.)
+**Decided**
+1. **One app, member/host role toggle.** A single app switches between the
+   member view and the venue/host view by role, until the host side is big
+   enough to justify its own app.
+2. **Spend is logged manually by venue staff after the member leaves.** No POS
+   integration at launch. Implication: staff need a lightweight "log a visit"
+   screen (member + amount + tip) in Phase 1, and the tier engine recomputes
+   from those entries. POS auto-capture stays a Phase 5 upgrade.
+
+**Still open (can settle as we go)**
 3. **Tier thresholds** — actual dollar figures for Silver → Obsidian.
 4. **Launch market** — one city / a handful of venues to start.
 5. **Revenue model** — membership fee, venue subscription, per-recognition, or
@@ -156,4 +167,5 @@ venues (VIP traffic, value), multi-city.
 
 ---
 
-*Next code step depends on Phase 1 decisions above — most importantly #1 and #2.*
+*Phase 1 is unblocked. Remaining open items (3–5) don't block the first code
+step and can be decided while Phase 1 is built.*
